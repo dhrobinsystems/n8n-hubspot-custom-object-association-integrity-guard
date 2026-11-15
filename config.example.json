@@ -1,0 +1,155 @@
+{
+  "_comment": "Template only. Copy to config.json (git-ignored) and replace every YOUR_..._HERE value. The CLI reads config.json directly. For n8n, run `npm run config:env` and paste the printed GUARD_CONFIG_JSON line into the n8n environment. That command drops the environment block, so secrets never end up inside GUARD_CONFIG_JSON. Real tokens belong in .env or your secret manager, not in a committed file.",
+
+  "environment": {
+    "HUBSPOT_PRIVATE_APP_TOKEN": "YOUR_HUBSPOT_PRIVATE_APP_TOKEN_HERE",
+    "HUBSPOT_BASE_URL": "https://api.hubapi.com",
+    "HUBSPOT_SANDBOX_PORTAL_ID": "YOUR_HUBSPOT_SANDBOX_PORTAL_ID_HERE",
+    "SLACK_WEBHOOK_URL": "YOUR_SLACK_WEBHOOK_URL_HERE",
+    "SLACK_SANDBOX_WEBHOOK_URL": "YOUR_SLACK_SANDBOX_WEBHOOK_URL_HERE",
+    "DRY_RUN": "true",
+    "SANDBOX_MODE": "true",
+    "FLAG_WRITES_ENABLED": "false",
+    "ALERT_ON_CLEAN_RUN": "false",
+    "SLACK_INCLUDE_RECORD_NAMES": "false",
+    "SLACK_MAX_SAMPLES": "10",
+    "FLAG_PROPERTY_GROUP_NAME": "YOUR_PROPERTY_GROUP_NAME_HERE"
+  },
+
+  "settings": {
+    "gracePeriodHours": 24,
+    "maxRecordsPerObject": 10000,
+    "pageSize": 100,
+    "batchSize": 100,
+    "maxFlagUpdatesPerRun": 200,
+    "orphanRateCircuitBreaker": 0.5,
+    "circuitBreakerMinSample": 20,
+    "verifyTargetsExist": true,
+    "flagProperties": {
+      "status": "association_integrity_status",
+      "issues": "association_integrity_issues",
+      "checkedAt": "association_integrity_checked_at"
+    }
+  },
+
+  "associationTypes": {
+    "project_to_company_primary": {
+      "_comment": "Labelled association Project -> Company. Find typeId and category with `npm run discover`.",
+      "fromObjectType": "YOUR_PROJECTS_OBJECT_TYPE_ID_HERE",
+      "toObjectType": "companies",
+      "category": "USER_DEFINED",
+      "typeId": "YOUR_PROJECT_TO_COMPANY_PRIMARY_LABEL_TYPE_ID_HERE",
+      "label": "Primary Client"
+    },
+    "shipment_to_deal_fulfilment": {
+      "_comment": "Labelled association Shipment -> Deal.",
+      "fromObjectType": "YOUR_SHIPMENTS_OBJECT_TYPE_ID_HERE",
+      "toObjectType": "deals",
+      "category": "USER_DEFINED",
+      "typeId": "YOUR_SHIPMENT_TO_DEAL_FULFILMENT_LABEL_TYPE_ID_HERE",
+      "label": "Fulfils"
+    }
+  },
+
+  "rules": [
+    {
+      "key": "projects",
+      "label": "Projects",
+      "objectTypeId": "YOUR_PROJECTS_OBJECT_TYPE_ID_HERE",
+      "enabled": true,
+      "displayProperty": "YOUR_PROJECT_NAME_PROPERTY_HERE",
+      "skipWhen": [
+        { "property": "YOUR_PROJECT_STATUS_PROPERTY_HERE", "in": ["cancelled"] }
+      ],
+      "requirements": [
+        {
+          "key": "primary_company",
+          "label": "Primary client company",
+          "toObjectType": "companies",
+          "associationType": "project_to_company_primary",
+          "min": 1,
+          "max": 1,
+          "severity": "critical"
+        },
+        {
+          "key": "deal",
+          "label": "Open or won deal",
+          "toObjectType": "deals",
+          "min": 1,
+          "severity": "critical",
+          "targetWhen": [
+            { "property": "dealstage", "notIn": ["closedlost"] }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "shipments",
+      "label": "Shipments",
+      "objectTypeId": "YOUR_SHIPMENTS_OBJECT_TYPE_ID_HERE",
+      "enabled": true,
+      "displayProperty": "YOUR_SHIPMENT_REFERENCE_PROPERTY_HERE",
+      "skipWhen": [
+        { "property": "YOUR_SHIPMENT_STATUS_PROPERTY_HERE", "in": ["cancelled"] }
+      ],
+      "requirements": [
+        {
+          "key": "fulfilment_deal",
+          "label": "Fulfilment deal",
+          "toObjectType": "deals",
+          "associationType": "shipment_to_deal_fulfilment",
+          "min": 1,
+          "max": 1,
+          "severity": "critical"
+        },
+        {
+          "key": "company",
+          "label": "Company",
+          "toObjectType": "companies",
+          "min": 1,
+          "severity": "warning"
+        }
+      ]
+    },
+    {
+      "key": "service_tickets",
+      "label": "Service Tickets",
+      "objectTypeId": "YOUR_SERVICE_TICKETS_OBJECT_TYPE_ID_HERE",
+      "enabled": true,
+      "displayProperty": "YOUR_TICKET_SUBJECT_PROPERTY_HERE",
+      "onlyWhen": [
+        { "property": "YOUR_TICKET_STATUS_PROPERTY_HERE", "notIn": ["archived"] }
+      ],
+      "flag": {
+        "statusProperty": "association_integrity_status",
+        "issuesProperty": "association_integrity_issues",
+        "checkedAtProperty": null
+      },
+      "requirements": [
+        {
+          "key": "customer_company",
+          "label": "Customer company",
+          "toObjectType": "companies",
+          "min": 1,
+          "severity": "critical",
+          "targetWhen": [
+            { "property": "lifecyclestage", "in": ["customer"] }
+          ]
+        },
+        {
+          "key": "warranty_deal",
+          "label": "Warranty deal",
+          "toObjectType": "deals",
+          "associationTypeId": "YOUR_SERVICE_TICKET_TO_DEAL_LABEL_TYPE_ID_HERE",
+          "associationCategory": "USER_DEFINED",
+          "associationLabel": "Warranty",
+          "min": 1,
+          "severity": "critical",
+          "when": [
+            { "property": "YOUR_TICKET_TYPE_PROPERTY_HERE", "in": ["warranty"] }
+          ]
+        }
+      ]
+    }
+  ]
+}
