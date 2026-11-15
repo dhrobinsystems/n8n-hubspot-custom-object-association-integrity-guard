@@ -73,6 +73,8 @@ Rule-level `onlyWhen` and `skipWhen` filters exclude records, for example cancel
 
 ## How the workflow runs
 
+![n8n HubSpot Custom Object Association Integrity Guard Workflow Overview](./assets/workflow-overview.png)
+
 ```
 Schedule (Mon–Fri 06:00) ─┐
 Manual Run ───────────────┴─▶ Load Config & Safety Gate ─▶ Demo Mode?
